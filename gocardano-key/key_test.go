@@ -18,6 +18,28 @@ func init() {
 	signingKey, verificationKey = GenerateKeys()
 }
 
+func TestGeneratePaymentKeyPair(t *testing.T) {
+	paymentKeyPair := GeneratePaymentKeyPair()
+	if paymentKeyPair == nil {
+		t.Fatalf("GeneratePaymentKeyPair failed")
+	}
+}
+
+func TestJson(t *testing.T) {
+	paymentKeyPair := GeneratePaymentKeyPair()
+	j := paymentKeyPair.VerificationKey.Key.ToJson()
+
+	if j == nil {
+		t.Fatalf("ToJson failed")
+	}
+
+	obj := FromJson(j)
+
+	if len(obj.CborHex) == 0 {
+		t.Fatalf("FromJson failed")
+	}
+}
+
 func TestSign(t *testing.T) {
 	key, _ := hex.DecodeString(testSigningKey)
 	privateKey := ed25519.PrivateKey(key)

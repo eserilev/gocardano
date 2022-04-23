@@ -2,6 +2,8 @@ package key
 
 import (
 	"crypto/ed25519"
+	"encoding/hex"
+	"encoding/json"
 
 	"golang.org/x/crypto/blake2b"
 )
@@ -11,22 +13,34 @@ const (
 )
 
 type Key struct {
+	KeyType     KeyType
+	Description string
+	CborHex     string
 }
 
-func (key *Key) ToJson() {
+type KeyType string
 
+const (
+	PAYMENT_SIGNING_KEY      KeyType = "PaymentSigningKeyShelley_ed25519"
+	PAYMENT_VERIFICATION_KEY KeyType = "PaymentVerificationKeyShelley_ed25519"
+)
+
+func (key *Key) ToJson() []byte {
+	k := &JsonKey{
+		Type:        string(key.KeyType),
+		Description: key.Description,
+		CborHex:     key.CborHex,
+	}
+
+	jsonKey, _ := json.Marshal(k)
+
+	return jsonKey
 }
 
-func (key *Key) FromJson() {
-
-}
-
-func (key *Key) FromFile() {
-
-}
-
-func (key *Key) ToFile() {
-
+func FromJson(data []byte) JsonKey {
+	jsonKey := &JsonKey{}
+	json.Unmarshal(data, jsonKey)
+	return *jsonKey
 }
 
 func GenerateKeys() (SigningKey, VerificationKey) {
@@ -77,4 +91,32 @@ func (key *VerificationKey) Hash() []byte {
 
 func (key *VerificationKey) Verify(data []byte, signature []byte) bool {
 	return ed25519.Verify(key.Public, data, signature)
+}
+
+type PaymentKeyPair struct {
+	VerificationKey VerificationKey
+	SigningKey      SigningKey
+}
+
+func GeneratePaymentKeyPair() *PaymentKeyPair {
+	signingKey, verificationKey := GenerateKeys()
+	paymentKeyPair := &PaymentKeyPair{
+		SigningKey:      signingKey,
+		VerificationKey: verificationKey,
+	}
+	paymentKeyPair.SigningKey.KeyType = PAYMENT_SIGNING_KEY
+	paymentKeyPair.SigningKey.Description = "Payment Signing Key"
+	paymentKeyPair.SigningKey.CborHex = hex.EncodeToString([]byte(paymentKeyPair.SigningKey.Private))
+
+	paymentKeyPair.VerificationKey.KeyType = PAYMENT_VERIFICATION_KEY
+	paymentKeyPair.VerificationKey.Description = "Payment Verification Key"
+	paymentKeyPair.VerificationKey.CborHex = hex.EncodeToString([]byte(paymentKeyPair.VerificationKey.Public))
+
+	return paymentKeyPair
+}
+
+type JsonKey struct {
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	CborHex     string `json:"cborHex"`
 }
