@@ -14,6 +14,8 @@ var testMessage, _ = hex.DecodeString("26a0a47f733d02ddb74589b6cbd6f64a7dab1947d
 var testSigningKey = "749026cce1c1544bd8d63043acb63f91fca63e444985739950455fe90b6d7e32d5bfb069eb3da218875a6caafa27e16ad01fc3408b90052741928337f8a0bdcb"
 var testSignedMessage, _ = hex.DecodeString("2fdd5f3a9029db02eddeaed7fa02c9526bcf24ef05e423b807f78967a5be2533dcba10d1ec596dd7ea3d9155ed07e9a9fc70b9cf69de21acaa0cd73be9c1d201")
 
+var testPaymentSigningKeyJson = []byte(`{"type": "PaymentSigningKeyShelley_ed25519", "description": "PaymentSigningKeyShelley_ed25519", "cborHex": "5820a1c7d95fab103a6b716e772d7e1b8f8e7e9f1126c31b41d1148cec371c9f966a"}`)
+
 func init() {
 	signingKey, verificationKey = GenerateKeys()
 }
@@ -21,6 +23,14 @@ func init() {
 func TestGeneratePaymentKeyPair(t *testing.T) {
 	paymentKeyPair := GeneratePaymentKeyPair()
 	if paymentKeyPair == nil {
+		t.Fatalf("GeneratePaymentKeyPair failed")
+	}
+
+	if paymentKeyPair.VerificationKey.KeyType != PAYMENT_VERIFICATION_KEY {
+		t.Fatalf("GeneratePaymentKeyPair failed")
+	}
+
+	if paymentKeyPair.SigningKey.KeyType != PAYMENT_SIGNING_KEY {
 		t.Fatalf("GeneratePaymentKeyPair failed")
 	}
 }
@@ -36,6 +46,13 @@ func TestJson(t *testing.T) {
 	obj := FromJson(j)
 
 	if len(obj.CborHex) == 0 {
+		t.Fatalf("FromJson failed")
+	}
+}
+
+func TestFromJson(t *testing.T) {
+	key := FromJson(testPaymentSigningKeyJson)
+	if key.KeyType != PAYMENT_SIGNING_KEY {
 		t.Fatalf("FromJson failed")
 	}
 }
